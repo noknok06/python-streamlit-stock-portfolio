@@ -12,8 +12,7 @@ import investment as inv
 st.set_page_config(layout="wide")
 
 # Google Financeから株式情報を取得する関数
-def get_soup(stock_code):
-    url = f'https://www.google.com/finance/quote/{stock_code}:TYO'
+def get_soup(url):
     res = requests.get(url)
     soup = BeautifulSoup(res.text, "html.parser")
     return soup
@@ -34,13 +33,15 @@ def convert_market_cap(market_cap_str):
 
 # 株式情報を取得する関数
 def get_stock_info(stock_code):
-    soup = get_soup(stock_code)
+    
+    soup = get_soup(f'https://www.google.com/finance/quote/{stock_code}:TYO')
     
     stock_value_elements = get_element(soup, "YMlKec fxKbKc")
     stock_value = stock_value_elements[0].text if stock_value_elements else "株価要素が見つかりません"
 
     stock_name = get_element(soup, "zzDege")
     stock_name = stock_name[0].text if stock_name else "株価要素が見つかりません"
+    
 
     additional_info_elements = get_element(soup, "P6K39c")
     if additional_info_elements and len(additional_info_elements) > 6:
@@ -51,8 +52,13 @@ def get_stock_info(stock_code):
         market_cap = "N/A"
         dividend_yield = "N/A"
     
+    soup = get_soup(f'https://www.bloomberg.co.jp/quote/{stock_code}:JP')
+    sector = get_element(soup, "cell__value cell__value_text")
+    sector = sector[0].text
+    
     return {
         '銘柄名': stock_name,
+        'セクター': sector,
         '株価': stock_value.replace("¥", "").replace(",", ""),
         '時価総額': market_cap,
         '配当利回': dividend_yield.replace("%", "").replace("-", "0")
@@ -178,13 +184,13 @@ def main():
         df['購入金額'] = (df['購入株数'] * df['株価'].astype(float)).round()
         df['配当金額'] = (df['配当利回'].astype(float) * df['購入株数'] * df['株価'].astype(float) / 100).round()
         
-        df = df[['銘柄名', '株価', '時価総額', '加重平均', '購入金額', '購入株数', '配当利回', '配当金額']]
+        df = df[['銘柄名','セクター', '株価', '時価総額', '加重平均', '購入金額', '購入株数', '配当利回', '配当金額']]
         
         with st.expander("銘柄詳細"):
             st.dataframe(df)
         
-    except:
-        pass
+    except Exception as e:
+        print(e)
 
     # 保存機能
     if st.sidebar.button("保存機能"):
