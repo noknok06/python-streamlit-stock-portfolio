@@ -1,0 +1,10 @@
+beautifulsoup4==4.12.2
+bootstrap4==0.1.0
+bs4==0.0.1
+numpy==1.24.3
+oauthlib==3.2.2
+pandas==2.0.1
+streamlit==1.35.0
+streamlit-tags==1.2.8
+altair==4.2.2
+requests==2.32.3
