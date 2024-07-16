@@ -23,10 +23,10 @@ def get_element(soup, class_txt):
     return elem
 
 # 時価総額を数値に変換する関数
-def convert_market_cap(market_cap_str):
-    if market_cap_str.endswith('B'):
+def convert_market_cap(market_cap_str, market_cap_judge):
+    if market_cap_judge.find('億') > 0:
         return float(market_cap_str[:-1]) * 1e9  # 億（10^9）
-    elif market_cap_str.endswith('T'):
+    elif market_cap_judge.find('兆') > 0:
         return float(market_cap_str[:-1]) * 1e12  # 兆（10^12）
     else:
         return float(market_cap_str)
@@ -34,34 +34,36 @@ def convert_market_cap(market_cap_str):
 # 株式情報を取得する関数
 def get_stock_info(stock_code):
     
-    soup = get_soup(f'https://www.google.com/finance/quote/{stock_code}:TYO')
+    soup = get_soup(f'https://www.bloomberg.co.jp/quote/{stock_code}:JP')
     
-    stock_value_elements = get_element(soup, "YMlKec fxKbKc")
+    stock_value_elements = get_element(soup, "price")
     stock_value = stock_value_elements[0].text if stock_value_elements else "株価要素が見つかりません"
 
-    stock_name = get_element(soup, "zzDege")
+    stock_name = get_element(soup, "name")
     stock_name = stock_name[0].text if stock_name else "株価要素が見つかりません"
+    stock_name = stock_name.replace(" ","")
     
-
-    additional_info_elements = get_element(soup, "P6K39c")
+    additional_info_elements = get_element(soup, "cell__value cell__value_")
+    market_cap_elements = get_element(soup, "cell__label")
+    market_cap_judge = market_cap_elements[15].text
     if additional_info_elements and len(additional_info_elements) > 6:
-        market_cap_str = additional_info_elements[3].text
-        market_cap = convert_market_cap(market_cap_str.replace(" JPY", ""))
-        dividend_yield = additional_info_elements[6].text
+        market_cap = additional_info_elements[12].text
+        market_cap = convert_market_cap(market_cap.replace(" ",""),market_cap_judge)
+        dividend_yield = additional_info_elements[15].text
+        dividend_yield = dividend_yield.replace("% ","")
     else:
         market_cap = "N/A"
         dividend_yield = "N/A"
     
-    soup = get_soup(f'https://www.bloomberg.co.jp/quote/{stock_code}:JP')
     sector = get_element(soup, "cell__value cell__value_text")
     sector = sector[0].text
     
     return {
         '銘柄名': stock_name,
         'セクター': sector,
-        '株価': stock_value.replace("¥", "").replace(",", ""),
+        '株価': float(stock_value.replace(",","")),
         '時価総額': market_cap,
-        '配当利回': dividend_yield.replace("%", "").replace("-", "0")
+        '配当利回': float(dividend_yield)
     }
 
 # 株式コード一覧をキャッシュして取得する関数
