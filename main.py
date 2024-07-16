@@ -200,15 +200,18 @@ def main():
         save_favorite()
 
     try:
-        col1, col2 = st.columns(2)
+        col1_1, col1_2 = st.columns(2)
         
-        with col1:
+        with col1_1:
             st.write("合計購入額")
             st.write(df['購入金額'].sum())
 
-        with col2:
+        with col1_2:
             st.write("合計配当額")
             st.write(df['配当金額'].sum())
+
+
+        col2_1, col2_2 = st.columns(2)
         
         source = df[["銘柄名", "加重平均"]]
         chart = alt.Chart(source).mark_arc(innerRadius=50).encode(
@@ -216,8 +219,23 @@ def main():
             theta=alt.Theta(field="加重平均", type="quantitative"),
         )
         
-        st.subheader('加重平均比率', divider='rainbow')
-        st.altair_chart(chart, use_container_width=True)
+        with col2_1:
+            st.subheader('加重平均比率', divider='rainbow')
+            st.altair_chart(chart, use_container_width=True)
+
+        source = df[["セクター", "加重平均"]]
+        source = source.groupby('セクター', as_index=False).sum()
+
+        chart = alt.Chart(source).mark_arc(innerRadius=50).encode(
+            color=alt.Color(field="セクター", type="nominal"),
+            theta=alt.Theta(field="加重平均", type="quantitative"),
+        )
+        
+        with col2_2:
+
+            st.subheader('セクター比率', divider='rainbow')
+            st.altair_chart(chart, use_container_width=True)
+
     except:
         pass
 
